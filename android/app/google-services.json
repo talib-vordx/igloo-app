@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "858928332003",
+    "project_id": "iglo-0022",
+    "storage_bucket": "iglo-0022.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:858928332003:android:34480641e77921d61fd9d6",
+        "android_client_info": {
+          "package_name": "com.example.igloo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPaO8HtQI1XKJKTe9g3IbJAHRxh56Z17M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -40,7 +40,7 @@ class SceondScreenSearch extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(10),
+          padding: EdgeInsets.all(10.r),
           child: Column(
             children: <Widget>[
               DrictMessageCard(),

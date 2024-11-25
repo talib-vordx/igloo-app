@@ -3,8 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 
+
 // First Custom Card for Home Screen First Tab(Top)
 class FirstActivatiesCard extends StatelessWidget{
+  const FirstActivatiesCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  Container(
@@ -16,9 +19,6 @@ class FirstActivatiesCard extends StatelessWidget{
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.8),
-            // spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 3), // changes position of shadow
           ),
         ],
       ),
@@ -38,22 +38,26 @@ class FirstActivatiesCard extends StatelessWidget{
                       children: [
                         Text("Talib Jameel",style: TextStyle(fontSize: 20.sp,fontWeight: FontWeight.bold),),
                         SizedBox(height: 2.h,),
-                        Text("09:04 am")
+                        const Text("09:04 am")
                       ],
                     ),
                   ],
                 ),
                 SizedBox(height: 8.h,),
-                SizedBox(height: 80.h,width: 300.w,child: Expanded(child:Text("GOOD LUCK FOR THE #Econ101 EXAM EVERYBODY!!!",textAlign: TextAlign.start,style: TextStyle(fontSize: 18.sp,fontWeight: FontWeight.w500),)),),
+             //   Container(height: 80.h,width: 300.w,child: Expanded(child:Text("GOOD LUCK FOR THE #Econ101 EXAM EVERYBODY!!!",textAlign: TextAlign.start,style: TextStyle(fontSize: 18.sp,fontWeight: FontWeight.w500),)),),
                 Row(
                   children: <Widget>[
-                    IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/commentbutton.svg',),)),
-                    Text("12",style: TextStyle(fontWeight: FontWeight.w700),),
+                    IconButton(onPressed: (){
+                     // Navigator.push(context, MaterialPageRoute(builder: (context) => const CommentScreen(),),);
+                    }, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/commentbutton.svg',),)),
+                    const Text("12",style: TextStyle(fontWeight: FontWeight.w700),),
                     SizedBox(width: 20.w,),
                     IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/Vector.svg',),)),
-                    Text("14",style: TextStyle(fontWeight: FontWeight.w700),),
+                    const Text("14",style: TextStyle(fontWeight: FontWeight.w700),),
                     SizedBox(width: 20.w,),
-                    IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/forwaedbutton.svg',),)),
+                    IconButton(onPressed: (){
+                   //   Navigator.push(context, MaterialPageRoute(builder: (context)=> const DirectMessage(),),);
+                    }, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/forwaedbutton.svg',),)),
 
                   ],
                 ),
@@ -68,7 +72,7 @@ class FirstActivatiesCard extends StatelessWidget{
                 //Icon(Icons.flag_outlined),
                 SizedBox(height: 20.h,),
                 Icon(Icons.keyboard_arrow_up,size: 41.sp,),
-                Text("25",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: Color(0xFF27D4C1),),),
+                Text("25",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: const Color(0xFF27D4C1),),),
                 Icon(Icons.keyboard_arrow_down_outlined,size: 41.sp,)
               ],
             ),
@@ -81,6 +85,8 @@ class FirstActivatiesCard extends StatelessWidget{
 
 // Second Custom Card for Home Screen First Tab(Top)
 class SecondActivatiesCard extends StatelessWidget{
+  const SecondActivatiesCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  Container(
@@ -93,8 +99,8 @@ class SecondActivatiesCard extends StatelessWidget{
           BoxShadow(
             color: Colors.grey.withOpacity(0.8),
             // spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 3), // changes position of shadow
+            // blurRadius: 3,
+            // offset: Offset(0, 3), // changes position of shadow
           ),
         ],
       ),
@@ -114,7 +120,7 @@ class SecondActivatiesCard extends StatelessWidget{
                       children: [
                         Text("Pizza hater guy",style: TextStyle(fontSize: 20.sp,fontWeight: FontWeight.bold),),
                         SizedBox(height: 2.h,),
-                        Text("12:04 am")
+                        const Text("12:04 am")
                       ],
                     ),
                   ],
@@ -123,13 +129,17 @@ class SecondActivatiesCard extends StatelessWidget{
                 SizedBox(height: 80.h,width: 300.w,child: Expanded(child:Text("Is the pizza in the canteen even considered edible? 🍕",textAlign: TextAlign.start,style: TextStyle(fontSize: 20.sp,fontWeight: FontWeight.w500),)),),
                 Row(
                   children: <Widget>[
-                    IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/commentbutton.svg',),)),
-                    Text("24",style: TextStyle(fontWeight: FontWeight.w700),),
+                    IconButton(onPressed: (){
+                     // Navigator.push(context, MaterialPageRoute(builder: (context) => const CommentScreen(),),);
+                    }, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/commentbutton.svg',),)),
+                    const Text("24",style: TextStyle(fontWeight: FontWeight.w700),),
                     SizedBox(width: 20.w,),
                     IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/Vector.svg',),)),
-                    Text("13",style: TextStyle(fontWeight: FontWeight.w700),),
+                    const Text("13",style: TextStyle(fontWeight: FontWeight.w700),),
                     SizedBox(width: 20.w,),
-                    IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/forwaedbutton.svg',),)),
+                    IconButton(onPressed: (){
+                     // Navigator.push(context, MaterialPageRoute(builder: (context)=> const DirectMessage(),),);
+                    }, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/forwaedbutton.svg',),)),
 
                   ],
                 ),
@@ -142,7 +152,7 @@ class SecondActivatiesCard extends StatelessWidget{
                 IconButton(onPressed: (){showCustomDialog(context);}, icon: Icon(Icons.flag_outlined,size: 35.sp,),),
                 SizedBox(height: 20.h,),
                 Icon(Icons.keyboard_arrow_up,size: 41.sp,),
-                Text("67",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: Color(0xFF27D4C1),),),
+                Text("67",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: const Color(0xFF27D4C1),),),
                 Icon(Icons.keyboard_arrow_down_outlined,size: 41.sp,)
               ],
             ),
@@ -155,10 +165,12 @@ class SecondActivatiesCard extends StatelessWidget{
 
 // Third Custom Card for Home Screen First Tab(Top)
 class ThirdActivatiesCard extends StatelessWidget{
+  const ThirdActivatiesCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  Container(
-      height: 450.h,
+      height: 560.h,
       decoration: BoxDecoration(
         color: Colors.white,
         // border: Border.all(color: const Color(0xFF1D4184)),
@@ -167,8 +179,8 @@ class ThirdActivatiesCard extends StatelessWidget{
           BoxShadow(
             color: Colors.grey.withOpacity(0.8),
             // spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 3), // changes position of shadow
+            // blurRadius: 3,
+            // offset: Offset(0, 3), // changes position of shadow
           ),
         ],
       ),
@@ -190,7 +202,7 @@ class ThirdActivatiesCard extends StatelessWidget{
                           children: [
                             Text("Pizza hater guy",style: TextStyle(fontSize: 20.sp,fontWeight: FontWeight.bold),),
                             SizedBox(height: 2.h,),
-                            Text("03:00 PM")
+                            const Text("03:00 PM")
                           ],
                         ),
                       ],
@@ -203,7 +215,7 @@ class ThirdActivatiesCard extends StatelessWidget{
                 Column(
                   children: [
                     Icon(Icons.keyboard_arrow_up,size: 41.sp,),
-                    Text("327",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: Color(0xFF27D4C1),),),
+                    Text("327",style: TextStyle(fontSize: 30.sp,fontWeight: FontWeight.bold,color: const Color(0xFF27D4C1),),),
                     Icon(Icons.keyboard_arrow_down_outlined,size: 41.sp,)
                   ],
                 ),
@@ -215,10 +227,10 @@ class ThirdActivatiesCard extends StatelessWidget{
             Row(
               children: <Widget>[
                 IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/commentbutton.svg',),)),
-                Text("24",style: TextStyle(fontWeight: FontWeight.w700),),
+                const Text("24",style: TextStyle(fontWeight: FontWeight.w700),),
                 SizedBox(width: 20.w,),
                 IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/Vector.svg',),)),
-                Text("13",style: TextStyle(fontWeight: FontWeight.w700),),
+                const Text("13",style: TextStyle(fontWeight: FontWeight.w700),),
                 SizedBox(width: 20.w,),
                 IconButton(onPressed: (){}, icon: SizedBox(height: 30.h,width: 30.w,child: SvgPicture.asset('res/images/forwaedbutton.svg',),)),
 
@@ -230,8 +242,7 @@ class ThirdActivatiesCard extends StatelessWidget{
     );
   }
 }
-
-// Voting Card for ThirdActivatiesCard
+//for third card
 class VotingCard extends StatelessWidget {
   final List<VoteOption> options = [
     VoteOption("Yes", 140, 0.4),
@@ -240,82 +251,86 @@ class VotingCard extends StatelessWidget {
     VoteOption("Won't play but spectate", 250, 0.7),
   ];
 
+  VotingCard({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: options.map((option) => buildOptionRow(option)).toList(),
+    return Container(
+      height: 315.h,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F1F1), // Light background color for the card
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: options.map((option) => buildOptionRow(option)).toList(),
+      ),
     );
   }
 
   Widget buildOptionRow(VoteOption option) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Stack(
-        children: [
-          // Outer Container with border
-          Container(
-            height: 40.h,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.8),
-                  // spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: Offset(0, 3), // changes position of shadow
-                ),
-              ],
-             // border: Border.all(color: Colors.grey[400]!, width: 1), // Border for outer container
-            ),
-            child: FractionallySizedBox(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        height: 48.h,
+        decoration: BoxDecoration(
+          color: Colors.white, // White background for each row
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: const Color(0xFFD0D0D0), width: 1), // Light grey border
+        ),
+        child: Stack(
+          children: [
+            // Progress Fill
+            FractionallySizedBox(
               widthFactor: option.percentage,
               child: Container(
-                // Inner Container with border
                 decoration: BoxDecoration(
-                  color: option.percentage == 0.2
-                      ? Colors.grey[400]
-                      : Colors.grey[350],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[500]!, width: 1), // Border for inner container
+                  color: Colors.grey[350], // Purple fill color
+                  borderRadius: BorderRadius.circular(11.r),
                 ),
               ),
             ),
-          ),
-          Container(
-            height: 40.h,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  option.label,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      "${option.votes} Votes",
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      "${(option.percentage * 100).toStringAsFixed(0)}%",
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-              ],
+            // Text and Vote Information
+            Padding(
+               padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                 Center(child: Text(
+                   option.label,
+                   style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                 ) ,),
+                  Row(
+                    children: [
+                      Text(
+                        "${option.votes} Votes",
+                        style: TextStyle(fontSize: 14.sp, color: Colors.black54),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        "${(option.percentage * 100).toStringAsFixed(0)}%",
+                        style: TextStyle(fontSize: 14.sp, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-// for voting card option asker
+// Model class for vote options
 class VoteOption {
   final String label;
   final int votes;
@@ -324,6 +339,7 @@ class VoteOption {
   VoteOption(this.label, this.votes, this.percentage);
 }
 
+
 // Dialog Box for Every Card
 void showCustomDialog(BuildContext context) {
   showGeneralDialog(
@@ -331,7 +347,7 @@ void showCustomDialog(BuildContext context) {
     barrierDismissible: true, // Closes the dialog when tapped outside
     barrierLabel: "Custom Alert",
     barrierColor: Colors.black.withOpacity(0.5),
-    transitionDuration: Duration(milliseconds: 300),
+    transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (BuildContext context, Animation<double> animation,
         Animation<double> secondaryAnimation) {
       return GestureDetector(
@@ -347,7 +363,7 @@ void showCustomDialog(BuildContext context) {
               child: Container(
                 width: 180.w,
                 height: 155.h,// Custom width of the dialog
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(10.w.h),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
@@ -355,11 +371,11 @@ void showCustomDialog(BuildContext context) {
                     BoxShadow(
                       color: Colors.black26,
                       blurRadius: 10.r,
-                      offset: Offset(0, 4),
+                      // offset: Offset(0, 4),
                     ),
                   ],
                 ),
-                child: CustomAlertBoxContent(),
+                child: const CustomAlertBoxContent(),
               ),
             ),
           ),
@@ -370,6 +386,8 @@ void showCustomDialog(BuildContext context) {
 }
 // CustomAlertBoxContent Extend the functionality of showCustomDialog
 class CustomAlertBoxContent extends StatelessWidget {
+  const CustomAlertBoxContent({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -395,6 +413,8 @@ class CustomAlertBoxContent extends StatelessWidget {
 
 //Drict Message Dcreen Card
 class DrictMessageCard extends StatelessWidget{
+  const DrictMessageCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  Container(
@@ -425,7 +445,7 @@ class DrictMessageCard extends StatelessWidget{
                   children: [
                     Text("Talib Jameel",style: TextStyle(fontSize: 20.sp,fontWeight: FontWeight.bold),),
                     SizedBox(height: 2.h,),
-                    Text("09:04 am")
+                    const Text("09:04 am")
                   ],
                 ),
               ],
@@ -440,10 +460,12 @@ class DrictMessageCard extends StatelessWidget{
 
 // Notification Card for Notifiction Screen
 class NotificationCard extends StatelessWidget{
+  const NotificationCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  Container(
-      height: 120.h,
+      height: 130.h,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12.r),
       ),
@@ -462,18 +484,17 @@ class NotificationCard extends StatelessWidget{
                   children: [
                     SizedBox(width:275.w ,child:Text("Anonymous commented” I get what you saying” on your post",style: TextStyle(fontSize: 18.sp,fontWeight: FontWeight.bold),),),
                     SizedBox(height: 10.h,),
-                    Text("09:04 am",textAlign: TextAlign.start,)
+                    const Text("09:04 am",textAlign: TextAlign.start,)
                   ],
                 ),
                 IconButton(onPressed: (){}, icon:SvgPicture.asset('res/images/ThreeDotButtonVertical.svg',),),
-
-
               ],
             ),
-
           ],
         ),
       ),
     );
   }
 }
+
+

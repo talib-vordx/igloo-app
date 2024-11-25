@@ -37,6 +37,23 @@ dependencies:
   flutter_native_splash: ^2.4.2
   flutter_screenutil: ^5.9.3
   flutter_svg: ^2.0.10+1
+  firebase_core: ^3.6.0
+  google_sign_in: ^6.2.2
+  firebase_auth: ^5.3.1
+  shared_preferences: ^2.3.2
+  flutter_cache_manager: ^3.4.1
+  get: ^4.6.6
+  cloud_firestore: ^5.4.5
+  app_settings: ^5.1.1
+  firebase_messaging: ^15.1.4
+  flutter_local_notifications: ^18.0.1
+  firebase_analytics: ^11.3.4
+  share_plus: ^10.1.2
+  http: ^1.2.2
+  path_provider: ^2.1.5
+  firebase_dynamic_links: ^6.0.10
+  flutter_deep_linking: 0.2.1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -89,6 +106,21 @@ flutter:
     - res/images/Post2nd.svg
     - res/images/Post3nd.svg
     - res/images/Post4nd.svg
+    - res/images/NewNotificationIcon.svg
+    - res/images/ph_heart-light.svg
+    - res/images/iconamoon_comment-dots-thin.svg
+    - res/images/ph_share-light.svg
+    - res/images/menpic.png
+    - res/images/TalibJamee.jpeg
+    - res/images/bell.svg
+    - res/images/contect.svg
+    - res/images/delateaccount.svg
+    - res/images/line.svg
+    - res/images/btn.svg
+    - res/images/appleButton.svg
+    - res/images/ph_heart-light.svg
+    - res/images/iconamoon_comment-dots-thin.svg
+    - res/images/ph_share-light.svg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

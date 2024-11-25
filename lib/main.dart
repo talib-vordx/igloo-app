@@ -1,10 +1,24 @@
+import 'dart:io';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'Splash_Screen/splash_screen.dart';
+import 'firebase_options.dart';
 
-import 'home.dart';
-
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform,);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandling);
   runApp(const MyApp());
+}
+
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandling(RemoteMessage message)async{
+  await Firebase.initializeApp();
+  stdout.write(message.notification?.title.toString());
 }
 
 class MyApp extends StatefulWidget {
@@ -24,13 +38,13 @@ class _MyAppState extends State<MyApp> {
       splitScreenMode: true,
       // Use builder only if you need to use library outside ScreenUtilInit context
       builder: (_ , child) {
-        return MaterialApp(
+        return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           // You can use the library anywhere in the app even in theme
           home: child,
         );
       },
-      child:  const Home(),
+      child:  const SplashScreen(),
     );
   }
 }
