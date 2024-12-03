@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:igloo/Login_Signin/login.dart';
-import 'Login_Signin/verify.dart';
+import 'Login_SignUP/login.dart';
+import 'Login_SignUP/verify.dart';
 import 'home.dart';
 
 class Wraper extends StatefulWidget {

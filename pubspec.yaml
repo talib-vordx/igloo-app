@@ -54,6 +54,11 @@ dependencies:
   firebase_dynamic_links: ^6.0.10
   flutter_deep_linking: 0.2.1
   intl: ^0.19.0
+  highlight_text: ^1.8.0
+  emoji_picker_flutter: ^3.1.0
+  image_picker: ^1.1.2
+  giphy_get: ^3.5.6
+  google_maps_flutter: ^2.10.0
 
 dev_dependencies:
   flutter_test:
@@ -121,6 +126,12 @@ flutter:
     - res/images/ph_heart-light.svg
     - res/images/iconamoon_comment-dots-thin.svg
     - res/images/ph_share-light.svg
+    - res/images/material-symbols_verified-outline.svg
+    - res/images/ph_align-top.svg
+    - res/images/mingcute_user-follow-line.svg
+    - res/images/personicon.svg
+    - res/images/iconamoon_arrow-up-2-thin.svg
+    - res/images/iconamoon_arrow-down-2-thin.svg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

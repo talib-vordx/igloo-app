@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatRoomId;
@@ -46,10 +48,43 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
   }
 
+  Stream<List<Map<String, dynamic>>> fetchMessages(String chatRoomId) {
+    return FirebaseFirestore.instance
+        .collection('chatRooms')
+        .doc(chatRoomId)
+        .collection('messages')
+        .orderBy('timestamp')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return {
+        'senderId': data['senderId'],
+        'text': data['text'],
+        'timestamp': data['timestamp'],
+      };
+    }).toList());
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Chat')),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        toolbarHeight: 130.h,
+        title: Row(
+          children: [
+            IconButton(onPressed: (){
+              Navigator.pop(context);
+            }, icon: Icon(Icons.arrow_back_ios_new)),
+            const Spacer(),
+            Text("DM's'",style: TextStyle(fontSize: 24.sp,color: Colors.black,fontWeight: FontWeight.w700),),
+            const Spacer(),
+            IconButton(onPressed: (){}, icon:SvgPicture.asset('res/images/ThireDotButton.svg',),),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -87,12 +122,12 @@ class _ChatScreenState extends State<ChatScreen> {
                         margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isSender ? Colors.blue : Colors.grey[300],
+                          color: isSender ? Color(0xFFCCFEF8) : Colors.grey[300],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           message['text'],
-                          style: TextStyle(color: isSender ? Colors.white : Colors.black),
+                          style: TextStyle(color: isSender ? Colors.black : Colors.black),
                         ),
                       ),
                     );
@@ -110,15 +145,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
+                      fillColor: Colors.grey[300],
+                      filled: true,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(50.r),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.send,),
+                        onPressed: _sendMessage,
                       ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.send, color: Colors.blue),
-                  onPressed: _sendMessage,
                 ),
               ],
             ),

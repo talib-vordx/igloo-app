@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:igloo/Notification/notification.dart';
-import 'package:igloo/pages/first_screen_home.dart';
-import 'package:igloo/pages/fourth_screen_profile.dart';
-import 'package:igloo/pages/sceond_screen_search.dart';
-import 'package:igloo/pages/third_screen_notification.dart';
+import 'BottomNavBarPages/first_screen_home.dart';
+import 'BottomNavBarPages/fourth_screen_profile.dart';
+import 'BottomNavBarPages/third_screen_notification.dart';
 import 'Create_and_Post/post_create_screen.dart';
+import 'BottomNavBarPages/second_Screen_Search.dart';
 
 
 
@@ -19,7 +19,7 @@ class _HomeState extends State<Home> {
   int currentTab = 0;
   final List<Widget> screens = [
     const FirstScreen(),
-    const SceondScreenSearch(),
+    const SearchBarScreen(),
     const ThirdScreenNotification(),
     const FourthScreenProfile(),
   ];
@@ -42,6 +42,7 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F3F7),
       body: PageStorage(bucket: bucket, child: currentScreen,),
 
       // floating + Button
@@ -54,6 +55,8 @@ class _HomeState extends State<Home> {
         child: const Icon(Icons.add,color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         shape: const CircularNotchedRectangle(),
@@ -90,7 +93,7 @@ class _HomeState extends State<Home> {
                       minWidth: 40.w,
                     onPressed: (){
                       setState(() {
-                        currentScreen = const SceondScreenSearch();
+                        currentScreen = const SearchBarScreen();
                         currentTab = 1;
                       });
                     },

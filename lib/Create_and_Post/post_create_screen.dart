@@ -1,15 +1,29 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+
+import '../BottomNavBarPages/first_screen_home.dart';
 import '../Notification/notification.dart';
 
-class PostCreateScreen extends StatelessWidget {
-  PostCreateScreen({super.key});
+class PostCreateScreen extends StatefulWidget {
+  const PostCreateScreen({super.key});
 
+  @override
+  State<PostCreateScreen> createState() => _PostCreateScreenState();
+}
+
+class _PostCreateScreenState extends State<PostCreateScreen> {
   final TextEditingController _postContentController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  final bool _showEmojiPicker = false;
+  File? _selectedImage;
+
   final NotificationServices notificationServices = NotificationServices();
 
   Future<void> createPost(String content, BuildContext context) async {
@@ -29,7 +43,8 @@ class PostCreateScreen extends StatelessWidget {
         print('Post added successfully');
 
         // Trigger notification after post creation
-        await notificationServices.showNotification(RemoteMessage(
+        await notificationServices.showNotification(
+            RemoteMessage(
           notification: RemoteNotification(
             title: 'Post Created!',
             body: 'Your post has been successfully added!',
@@ -58,9 +73,63 @@ class PostCreateScreen extends StatelessWidget {
     }
   }
 
+  void _toggleEmojiPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.4,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(20),
+            ),
+          ),
+          child: EmojiPicker(
+            onEmojiSelected: (category, emoji) {
+              setState(() {
+                _postContentController.text += emoji.emoji;
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+
+  // Image Picker Functionality
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  // GIF Picker Functionality
+  void _pickGIF() {
+    // Placeholder for GIF picker logic (can integrate giphy_get or similar library)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('GIF Picker feature coming soon!')),
+    );
+  }
+
+  // Location Picker Functionality
+  void _pickLocation() {
+    // Placeholder for location picker logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Location Picker feature coming soon!')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F3F7),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
@@ -77,11 +146,16 @@ class PostCreateScreen extends StatelessWidget {
             Text(
               'Create Post',
               style: TextStyle(
-                  fontSize: 24.sp, fontWeight: FontWeight.w700, color: Colors.black),
+                fontSize: 24.sp,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
             ),
             const Spacer(),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                _submitPost(context);
+              },
               icon: SvgPicture.asset('res/images/tabler_send.svg'),
             ),
           ],
@@ -90,94 +164,91 @@ class PostCreateScreen extends StatelessWidget {
       body: Padding(
         padding: EdgeInsets.all(20.r),
         child: SingleChildScrollView(
-          child: Container(
-            height: 600.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.4),
-                  blurRadius: 3,
-                ),
-              ],
-            ),
+          child: Card(
+            color: Colors.white,
             child: Padding(
-              padding: EdgeInsets.only(top: 10.h),
+              padding: EdgeInsets.all(20.r),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      SizedBox(width: 20.w),
-                      PhysicalModel(
-                        color: Colors.black,
-                        clipBehavior: Clip.antiAlias,
-                        shape: BoxShape.circle,
-                        child: Image.asset(
-                          'res/images/appicon.png',
-                          width: 60.w,
-                          height: 60.w,
-                          fit: BoxFit.cover,
+                      CircleAvatar(
+                        radius: 30.w,
+                        backgroundImage: NetworkImage(
+                          FirebaseAuth.instance.currentUser?.photoURL ??
+                              'https://via.placeholder.com/150',
                         ),
                       ),
                       SizedBox(width: 10.w),
-                      Padding(
-                        padding: EdgeInsets.only(top: 80.h),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            SizedBox(
-                              width: 250.w,
-                              child: TextFormField(
-                                controller: _postContentController,
-                                minLines: 1,
-                                maxLines: null,
-                                decoration: const InputDecoration(
-                                  hintText:
-                                  'Uni help? Secret Crush? Confession? Share what’s on your mind...',
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 20.h),
-                            Row(
-                              children: <Widget>[
-                                SvgPicture.asset('res/images/Post1nd.svg'),
-                                SizedBox(width: 25.w),
-                                SvgPicture.asset('res/images/Post2nd.svg'),
-                                SizedBox(width: 25.w),
-                                SvgPicture.asset('res/images/Post3nd.svg'),
-                                SizedBox(width: 25.w),
-                                SvgPicture.asset('res/images/Post4nd.svg'),
-                              ],
-                            ),
-                          ],
+                      Expanded(
+                        child: TextFormField(
+                          controller: _postContentController,
+                          minLines: 3,
+                          maxLines: null,
+                          decoration: const InputDecoration(
+                            hintText: 'Uni help? Secret Crush? Confession? Share what’s on your mind...',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            border: InputBorder.none,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 60.h),
-                  Padding(
-                    padding: EdgeInsets.only(right: 20.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        MaterialButton(
-                          color: const Color(0xFF27D4C1),
-                          minWidth: 140.w,
-                          height: 45.h,
-                          onPressed: () {
-                            _submitPost(context);
-                          },
-                          child: const Text(
-                            'POST',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
+                  SizedBox(height: 20.h),
+                  if (_selectedImage != null)
+                    Image.file(
+                      _selectedImage!,
+                      height: 150.h,
+                      fit: BoxFit.cover,
                     ),
+                  SizedBox(height: 10.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        onPressed: _toggleEmojiPicker,
+                        icon: SvgPicture.asset('res/images/Post1nd.svg'),
+                      ),
+                      IconButton(
+                        onPressed: _pickImage,
+                        icon: SvgPicture.asset('res/images/Post2nd.svg'),
+                      ),
+                      IconButton(
+                        onPressed: _pickGIF,
+                        icon: SvgPicture.asset('res/images/Post3nd.svg'),
+                      ),
+                      IconButton(
+                        onPressed: _pickLocation,
+                        icon: SvgPicture.asset('res/images/Post4nd.svg'),
+                      ),
+                    ],
+                  ),
+                  if (_showEmojiPicker)
+                    SizedBox(
+                      height: 250.h,
+                      child: EmojiPicker(
+                        onEmojiSelected: (category, emoji) {
+                          _postContentController.text += emoji.emoji;
+                        },
+                      ),
+                    ),
+                  SizedBox(height: 20.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      MaterialButton(
+                        color: const Color(0xFF27D4C1),
+                        minWidth: 140.w,
+                        height: 45.h,
+                        onPressed: () {
+                          _submitPost(context);
+                        },
+                        child: const Text(
+                          'POST',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -185,45 +256,6 @@ class PostCreateScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class Post {
-  String? id;
-  final String content;
-  final String userId;
-  final String userName;
-  final String? userProfileUrl;
-  final DateTime createdAt;
-
-  Post({
-    this.id,
-    required this.content,
-    required this.userId,
-    required this.userName,
-    this.userProfileUrl,
-    required this.createdAt,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'content': content,
-      'userId': userId,
-      'userName': userName,
-      'userProfileUrl': userProfileUrl,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  static Post fromMap(Map<String, dynamic> map, String id) {
-    return Post(
-      id: id,
-      content: map['content'],
-      userId: map['userId'],
-      userName: map['userName'],
-      userProfileUrl: map['userProfileUrl'],
-      createdAt: DateTime.parse(map['createdAt']),
     );
   }
 }
