@@ -42,7 +42,7 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F3F7),
+      backgroundColor: const Color(0xFFF5F3F7),
       body: PageStorage(bucket: bucket, child: currentScreen,),
 
       // floating + Button
@@ -97,7 +97,7 @@ class _HomeState extends State<Home> {
                         currentTab = 1;
                       });
                     },
-                    child:SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/SearchButton.svg',color: currentTab == 1 ? const Color(0xFF27D4C1) : Colors.grey,),)
+                    child:SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/SearchButton.svg',color: currentTab == 1 ?  const Color(0xFF27D4C1) : Colors.black,),)
                   ),
                 ],
               ),
@@ -114,7 +114,7 @@ class _HomeState extends State<Home> {
                         currentTab = 2;
                       });
                     },
-                    child: SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/NewNotificationIcon.svg',color: currentTab == 2 ? const Color(0xFF27D4C1) : Colors.grey,),),
+                    child: SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/NewNotificationIcon.svg',color: currentTab == 2 ?  const Color(0xFF27D4C1) : Colors.black,),),
                   ),
                   MaterialButton(
                     splashColor: Colors.transparent,
@@ -126,7 +126,7 @@ class _HomeState extends State<Home> {
                         currentTab = 3;
                       });
                     },
-                    child: SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/ProfileButton.svg',color: currentTab == 3 ? const Color(0xFF27D4C1) : Colors.grey,),),
+                    child: SizedBox(height: 40.h,width: 40.w,child: SvgPicture.asset('res/images/ProfileButton.svg',color: currentTab == 3 ?  const Color(0xFF27D4C1) : Colors.black,),),
                   ),
                 ],
               ),

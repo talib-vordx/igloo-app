@@ -175,6 +175,19 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
     });
   }
 
+  Future<List<String>> getFollowingUserIds(String currentUserId) async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .get();
+
+    if (docSnapshot.exists) {
+      // Assuming the field 'following' is an array of userIds
+      return List<String>.from(docSnapshot['following'] ?? []);
+    }
+    return [];
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -399,10 +412,10 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
                                           ],
                                         ),
                                         onTap: (){
-                                          Navigator.push(context, MaterialPageRoute(builder: (context)=> UserDetailsScreen(userId: post.userId)));
+                                          Navigator.push(context, MaterialPageRoute(builder: (context)=> otherUserDetails(userId: post.userId)));
                                         },
                                       ),
-                                      Spacer(),
+                                      const Spacer(),
                                       // Only show IconButton if the current user is not the author of the post
                                       currentUser != null &&
                                           currentUser.uid != post.userId
@@ -707,7 +720,186 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
                     // Second TabBar View
                     const Center(child: Text('No New Post')),
                     // Third TabBar View
-                    const Center(child: Text('No Follower')),
+                   // const Center(child: Text('No Follower')),
+
+                    // FutureBuilder<List<String>>(
+                    //   future: getFollowingUserIds(FirebaseAuth.instance.currentUser!.uid), // Fetch following userIds
+                    //   builder: (context, followingSnapshot) {
+                    //     if (followingSnapshot.connectionState == ConnectionState.waiting) {
+                    //       return const Center(child: CircularProgressIndicator());
+                    //     } else if (followingSnapshot.hasError) {
+                    //       return Center(child: Text('Error: ${followingSnapshot.error}'));
+                    //     } else if (!followingSnapshot.hasData || followingSnapshot.data!.isEmpty) {
+                    //       return const Center(child: Text('You are not following anyone.'));
+                    //     } else {
+                    //       final followingUserIds = followingSnapshot.data!;
+                    //
+                    //       // Now, use followingUserIds in the StreamBuilder to filter posts
+                    //       return StreamBuilder<QuerySnapshot>(
+                    //         stream: FirebaseFirestore.instance
+                    //             .collection('posts')
+                    //             .where('userId', whereIn: followingUserIds) // Filter posts by followed users
+                    //             .orderBy('createdAt', descending: true)
+                    //             .snapshots(),
+                    //         builder: (context, snapshot) {
+                    //           if (snapshot.connectionState == ConnectionState.waiting) {
+                    //             return const Center(child: CircularProgressIndicator());
+                    //           } else if (snapshot.hasError) {
+                    //             return Center(child: Text('Error: ${snapshot.error}'));
+                    //           } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    //             return const Center(child: Text('No posts from users you follow.'));
+                    //           } else {
+                    //             final posts = snapshot.data!.docs
+                    //                 .map((doc) => Post.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                    //                 .toList();
+                    //             return ListView.builder(
+                    //               itemCount: posts.length,
+                    //               itemBuilder: (context, index) {
+                    //                 final post = posts[index];
+                    //                 final currentUser = FirebaseAuth.instance.currentUser;
+                    //                 return Card(
+                    //                   color: Colors.white,
+                    //                   child: ListTile(
+                    //                     title: Row(
+                    //                       children: [
+                    //                         post.userProfileUrl != null
+                    //                             ? CircleAvatar(backgroundImage: NetworkImage(post.userProfileUrl!))
+                    //                             : const CircleAvatar(child: Icon(Icons.person)),
+                    //                         SizedBox(width: 20.w),
+                    //                         GestureDetector(
+                    //                           child: Column(
+                    //                             crossAxisAlignment: CrossAxisAlignment.start,
+                    //                             children: [
+                    //                               Text(
+                    //                                 post.userName,
+                    //                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22.sp),
+                    //                               ),
+                    //                               Text(
+                    //                                 post.getFormattedTime(), // Display formatted time
+                    //                                 style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                    //                               ),
+                    //                             ],
+                    //                           ),
+                    //                           onTap: () {
+                    //                             Navigator.push(
+                    //                               context,
+                    //                               MaterialPageRoute(builder: (context) => otherUserDetails(userId: post.userId)),
+                    //                             );
+                    //                           },
+                    //                         ),
+                    //                         const Spacer(),
+                    //                         currentUser != null && currentUser.uid != post.userId
+                    //                             ? IconButton(
+                    //                           onPressed: () {
+                    //                             // Handle flagging or reporting the post here
+                    //                           },
+                    //                           icon: Icon(Icons.flag_outlined, size: 28.sp),
+                    //                         )
+                    //                             : Container(),
+                    //                       ],
+                    //                     ),
+                    //                     subtitle: Column(
+                    //                       crossAxisAlignment: CrossAxisAlignment.start,
+                    //                       children: [
+                    //                         Row(
+                    //                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //                           children: [
+                    //                             SizedBox(height: 10.h),
+                    //                             SizedBox(width: 300.w, child: Text(post.content)),
+                    //                             Row(
+                    //                               children: <Widget>[
+                    //                                 IconButton(
+                    //                                   onPressed: () {
+                    //                                     if (post.id != null) {
+                    //                                       Navigator.push(
+                    //                                         context,
+                    //                                         MaterialPageRoute(
+                    //                                           builder: (context) => CommentScreen(postId: post.id!),
+                    //                                         ),
+                    //                                       );
+                    //                                     }
+                    //                                   },
+                    //                                   icon: SvgPicture.asset('res/images/commentbutton.svg'),
+                    //                                 ),
+                    //                                 StreamBuilder<QuerySnapshot>(
+                    //                                   stream: FirebaseFirestore.instance
+                    //                                       .collection('posts')
+                    //                                       .doc(post.id)
+                    //                                       .collection('comments')
+                    //                                       .snapshots(),
+                    //                                   builder: (context, commentSnapshot) {
+                    //                                     if (commentSnapshot.connectionState == ConnectionState.waiting) {
+                    //                                       return Text("0");
+                    //                                     } else if (commentSnapshot.hasData) {
+                    //                                       return Text(commentSnapshot.data!.docs.length.toString(),
+                    //                                           style: TextStyle(fontWeight: FontWeight.w700));
+                    //                                     } else {
+                    //                                       return Text("0");
+                    //                                     }
+                    //                                   },
+                    //                                 ),
+                    //                                 SizedBox(width: 20.w),
+                    //                                 IconButton(
+                    //                                   onPressed: () {
+                    //                                     shareText(); // Implement share functionality
+                    //                                   },
+                    //                                   icon: SvgPicture.asset('res/images/Vector.svg'),
+                    //                                 ),
+                    //                                 Text("$shareCount", style: TextStyle(fontWeight: FontWeight.w700)),
+                    //                                 SizedBox(width: 20.w),
+                    //                                 currentUser != null && currentUser.uid != post.userId
+                    //                                     ? IconButton(
+                    //                                   onPressed: () async {
+                    //                                     if (currentUser == null) {
+                    //                                       ScaffoldMessenger.of(context).showSnackBar(
+                    //                                         const SnackBar(content: Text('Please log in to chat.')),
+                    //                                       );
+                    //                                       return;
+                    //                                     }
+                    //
+                    //                                     String generateChatRoomId(String userId1, String userId2) {
+                    //                                       return userId1.hashCode <= userId2.hashCode
+                    //                                           ? '$userId1-$userId2'
+                    //                                           : '$userId2-$userId1';
+                    //                                     }
+                    //
+                    //                                     final chatRoomId = generateChatRoomId(currentUser.uid, post.userId);
+                    //                                     await FirebaseFirestore.instance.collection('chatRooms').doc(chatRoomId).set({
+                    //                                       'chatRoomId': chatRoomId,
+                    //                                       'users': [currentUser.uid, post.userId],
+                    //                                       'postContent': post.content,
+                    //                                       'lastMessage': '',
+                    //                                       'updatedAt': Timestamp.now(),
+                    //                                     });
+                    //
+                    //                                     Navigator.push(
+                    //                                       context,
+                    //                                       MaterialPageRoute(
+                    //                                         builder: (context) => ChatScreen(chatRoomId: chatRoomId),
+                    //                                       ),
+                    //                                     );
+                    //                                   },
+                    //                                   icon: SizedBox(height: 30.h, width: 30.w, child: SvgPicture.asset('res/images/forwaedbutton.svg')),
+                    //                                 )
+                    //                                     : Container(),
+                    //                               ],
+                    //                             ),
+                    //                           ],
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                   ),
+                    //                 );
+                    //               },
+                    //             );
+                    //           }
+                    //         },
+                    //       );
+                    //     }
+                    //   },
+                    // ),
+
+
                     // Fourth TabBar View
                     const Center(child: Text('No Verified')),
                   ]),

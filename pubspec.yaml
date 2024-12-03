@@ -132,6 +132,7 @@ flutter:
     - res/images/personicon.svg
     - res/images/iconamoon_arrow-up-2-thin.svg
     - res/images/iconamoon_arrow-down-2-thin.svg
+    - res/images/searchIcon.svg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

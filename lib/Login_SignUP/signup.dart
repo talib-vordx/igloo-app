@@ -78,7 +78,6 @@ class _SignupState extends State<Signup> {
   }
 
   /// Function to store user data in Firebase Firestore
-  /// Function to store user data in Firebase Firestore
   Future<void> storeUserData(User user) async {
     try {
       FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -138,7 +137,7 @@ class _SignupState extends State<Signup> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => Home(),
+          builder: (context) => const Home(),
         ),
       );
 
@@ -332,8 +331,8 @@ class _SignupState extends State<Signup> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xff27D4C1),
-                          Colors.black,
+                          Color(0xFFfdbb2d),
+                          Color(0xFF27D4C1),
                         ]),
                     borderRadius: BorderRadius.circular(30.r),
                   ),

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class UserProfileScreen extends StatelessWidget {
-  const UserProfileScreen({super.key});
+import '../wraper.dart';
+
+class currentUserProfileScreen extends StatelessWidget {
+  const currentUserProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,7 @@ class UserProfileScreen extends StatelessWidget {
               profilePicUrl.isNotEmpty ? NetworkImage(profilePicUrl) : null,
               child: profilePicUrl.isEmpty ? const Icon(Icons.person, size: 50) : null,
             ),
-             SizedBox(height: 20.h),
+             SizedBox(height: 10.h,),
 
             // User Name
             ListTile(
@@ -68,9 +73,54 @@ class UserProfileScreen extends StatelessWidget {
               title: const Text('Account Created'),
               subtitle: Text(formattedDate),
             ),
+
+            // Logout Button
+            MaterialButton(
+              minWidth: 300.w,
+              height: 50.h,
+              color: const Color(0xff27D4C1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r)
+              ),
+              onPressed: (){
+              signOutFromGoogle(context);
+            },
+              child: const Text('Logout'),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+Future<void> signOutFromGoogle(BuildContext context) async {
+  try {
+    // Step 1: Sign out from Firebase
+    await FirebaseAuth.instance.signOut();
+
+    // Step 2: Sign out from Google
+    GoogleSignIn googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
+
+    // Step 3: Clear SharedPreferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    // Step 4: Clear Cache
+    await DefaultCacheManager().emptyCache();
+
+    // Step 5: Navigate to Login Screen and clear stack
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const Wraper()),
+          (route) => false, // Remove all previous routes
+    );
+  } catch (e) {
+    // Handle errors during sign-out
+    print("Sign out failed: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Sign out failed: $e")),
     );
   }
 }

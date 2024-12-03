@@ -68,12 +68,13 @@ class _LoginState extends State<Login> {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
       if (googleUser == null) {
         // The user canceled the sign-in
         return;
       }
 
-      GoogleSignInAuthentication? googleAuth = await googleUser.authentication;
+      GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       AuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
@@ -81,12 +82,16 @@ class _LoginState extends State<Login> {
       );
 
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      await FirebaseAuth.instance.signInWithCredential(credential);
 
-      // Always set a display name
-      if (userCredential.user!.displayName == null) {
-        await userCredential.user!
-            .updateDisplayName(googleUser.displayName ?? 'Unnamed');
+      // Always set a display name and photo URL for Google sign-in users
+      if (userCredential.user != null) {
+        if (userCredential.user!.displayName == null) {
+          await userCredential.user!.updateDisplayName(googleUser.displayName ?? 'Anonymous');
+        }
+        if (userCredential.user!.photoURL == null) {
+          await userCredential.user!.updatePhotoURL(googleUser.photoUrl ?? '');
+        }
       }
 
       // Store user data in Firestore after sign-in
@@ -96,7 +101,7 @@ class _LoginState extends State<Login> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => Home(), // Replace with your home screen widget
+          builder: (context) => const Home(),
         ),
       );
 
@@ -249,8 +254,8 @@ class _LoginState extends State<Login> {
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  const Color(0xff27D4C1),
-                                  Colors.black,
+                                  Color(0xFFfdbb2d),
+                                  Color(0xFF27D4C1),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(30.r),
