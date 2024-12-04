@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart';
 import 'package:igloo/chat_room/chat_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -18,11 +19,9 @@ class FirstScreen extends StatefulWidget {
 }
 
 class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin {
-  Stream<QuerySnapshot> postStream = FirebaseFirestore.instance
-      .collection('posts')
-      .orderBy('createdAt', descending: true)
-      .snapshots();
-  DateTime? selectedDate;
+  late Stream<QuerySnapshot> _postStream;
+  String _filter = "all";
+
 
   late TabController _tabController;
   @override
@@ -32,7 +31,88 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
     _tabController.addListener(() {
       setState(() {});
     });
+    _updatePostStream();
   }
+
+  // Update the post stream based on the selected filter
+  void _updatePostStream() {
+    DateTime now = DateTime.now();
+
+    if (_filter == "day") {
+      // Show posts from today (24 hours ago)
+      _postStream = FirebaseFirestore.instance
+          .collection('posts')
+          .where('createdAt', isGreaterThanOrEqualTo: _formatDate(now.subtract(const Duration(days: 1))))
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    } else if (_filter == "week") {
+      // Show posts from this week (7 days ago)
+      _postStream = FirebaseFirestore.instance
+          .collection('posts')
+          .where('createdAt', isGreaterThanOrEqualTo: _formatDate(now.subtract(const Duration(days: 7))))
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    } else if (_filter == "anytime") {
+      // Show posts based on a selected date
+      _pickDate();  // Call the date picker when "Anydate" is selected
+    } else {
+      // Default: show all posts
+      _postStream = FirebaseFirestore.instance
+          .collection('posts')
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    }
+  }
+
+// Convert DateTime to string in the format of the stored 'createdAt' in Firestore
+  String _formatDate(DateTime date) {
+    return DateFormat('yyyy-MM-ddTHH:mm:ss.SSSSSS').format(date);
+  }
+
+// Method to pick a date and update the stream based on the selected date
+  void _pickDate() async {
+    final DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (selectedDate != null) {
+      // Format the selected date to match Firestore format
+      final formattedDate = _formatDate(selectedDate);
+
+      // Update the stream to show posts from the selected date
+      setState(() {
+        _filter = "anytime"; // Update filter to 'anytime' when a specific date is selected
+      });
+
+      _postStream = FirebaseFirestore.instance
+          .collection('posts')
+          .where('createdAt', isGreaterThanOrEqualTo: formattedDate)
+          .where('createdAt', isLessThanOrEqualTo: _formatDate(selectedDate.add(const Duration(days: 1)))) // Limit to the selected date
+          .orderBy('createdAt', descending: true)
+          .snapshots();
+    }
+  }
+
+// Button style based on selection
+  ButtonStyle _getButtonStyle(String filter) {
+    return ButtonStyle(
+      backgroundColor: WidgetStateProperty.all(
+        _filter == filter ? const Color(0xFF27D4C1) : Colors.white,
+      ),
+      foregroundColor: WidgetStateProperty.all(
+        _filter == filter ? Colors.white : Colors.black,
+      ),
+      shape: WidgetStateProperty.all(const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // No radius for sharp edges
+      )),
+      minimumSize: WidgetStateProperty.all(Size(120.w, 60.h)), // Control width and height
+    );
+  }
+
+
 
   @override
   void dispose() {
@@ -128,53 +208,7 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
     });
   }
 
-
-  void filterByDay() {
-    // Start of the current day (midnight)
-    DateTime startOfDay = DateTime.now().subtract(
-      Duration(
-        hours: DateTime.now().hour,
-        minutes: DateTime.now().minute,
-        seconds: DateTime.now().second,
-      ),
-    );
-
-    setState(() {
-      postStream = FirebaseFirestore.instance
-          .collection('posts')
-          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .orderBy('createdAt', descending: true)
-          .snapshots();
-    });
-  }
-
-  void filterByWeek() {
-    DateTime startOfWeek = DateTime.now().subtract(
-      Duration(days: DateTime.now().weekday - 1, hours: DateTime.now().hour, minutes: DateTime.now().minute, seconds: DateTime.now().second),
-    );
-
-    setState(() {
-      postStream = FirebaseFirestore.instance
-          .collection('posts')
-          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
-          .orderBy('createdAt', descending: true)
-          .snapshots();
-    });
-  }
-
-  void pickAnyDate(DateTime selectedDate) {
-    DateTime startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-
-    setState(() {
-      postStream = FirebaseFirestore.instance
-          .collection('posts')
-          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(startOfDay.add(Duration(days: 1))))
-          .orderBy('createdAt', descending: true)
-          .snapshots();
-    });
-  }
-
+  // Method to Get Follow user
   Future<List<String>> getFollowingUserIds(String currentUserId) async {
     final docSnapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -187,6 +221,18 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
     }
     return [];
   }
+
+  // Second Tab view Function
+  Stream<QuerySnapshot> _getCurrentDayPostsStream() {
+    DateTime now = DateTime.now();
+    String todayStart = DateFormat('yyyy-MM-ddT00:00:00.000000').format(now);
+    return FirebaseFirestore.instance
+        .collection('posts')
+        .where('createdAt', isGreaterThanOrEqualTo: todayStart)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
 
 
   @override
@@ -244,8 +290,7 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
                       SvgPicture.asset(
                         'res/images/ph_align-top.svg',
                         width: 30.w,
-                        height: 30.h,
-                        color: _tabController.index == 0 ? Colors.black : Colors.grey, // Change color based on tab index
+                        height: 30.h, color: _tabController.index == 0 ? Colors.black : Colors.grey, // Change color based on tab index
                       ),
                       SizedBox(width: 10.w),
                       Text(
@@ -327,62 +372,419 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
               ],
             ),
             SizedBox(height: 20.h,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children:[
-                  MaterialButton(
-                    height: 60.h,
-                    minWidth: 120.w,
-                    color: const Color(0xFF27D4C1),
-                    onPressed: (){},child: const Text('Day'),
-                  ),
-                  MaterialButton(
-                    height: 60.h,
-                    minWidth: 120.w,
-                    color: Colors.white,
-                    onPressed: (){},child: const Text('Week'),
-                  ),
-                  MaterialButton(
-                    height: 60.h,
-                    minWidth: 120.w,
-                    color: Colors.white,
-                    onPressed: (){},child: const Text('Anydate'),
-                  ),
-                ],
-              ),
-            SizedBox(height: 20.h,),
             Expanded(
               child: TabBarView(
                   controller: _tabController,
                   children: [
                     // First TabBar View
+                    Column(
+                      children: [
+                        // Filter Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _filter = "day";
+                                  _updatePostStream(); // Update stream to filter by today
+                                });
+                              },
+                              style: _getButtonStyle("day"),
+                              child: const Text('Day'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _filter = "week";
+                                  _updatePostStream(); // Update stream to filter by the last week
+                                });
+                              },
+                              style: _getButtonStyle("week"),
+                              child: const Text('Week'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _filter = "anytime";
+                                  _updatePostStream(); // Update stream to filter by any date
+                                });
+                              },
+                              style: _getButtonStyle("anytime"),
+                              child: const Text('Anydate'),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20.h,),
+                        Expanded(
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _postStream,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              } else if (snapshot.hasError) {
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                return const Center(child: Text('No posts available.'));
+                              } else {
+                                final posts = snapshot.data!.docs
+                                    .map((doc) => Post.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                                    .toList();
+                                return ListView.builder(
+                                  itemCount: posts.length,
+                                  itemBuilder: (context, index) {
+                                    final post = posts[index];
+                                    final currentUser = FirebaseAuth.instance.currentUser;
+                                    return Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        title: GestureDetector(
+                                          child: Row(
+                                            children: [
+                                              post.userProfileUrl != null
+                                                  ? CircleAvatar(
+                                                backgroundImage: NetworkImage(
+                                                    post.userProfileUrl!),
+                                              )
+                                                  : const CircleAvatar(
+                                                  child: Icon(Icons.person)),
+                                              SizedBox(width: 20.w),
+                                              Column(
+                                                crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    post.userName,
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 22.sp),
+                                                  ),
+                                                  Text(
+                                                    post.getFormattedTime(), // Display "Today 12:20 PM" or "22 Nov 2024 12:20 PM"
+                                                    style: TextStyle(
+                                                        fontSize: 12.sp,
+                                                        color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                              const Spacer(),
+                                              // Only show IconButton if the current user is not the author of the post
+                                              currentUser != null &&
+                                                  currentUser.uid != post.userId
+                                                  ? IconButton(
+                                                onPressed: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (BuildContext context) {
+                                                      return Padding(
+                                                        padding: EdgeInsets.only(right: 20.w,top: 100.h),
+                                                        child: Align(
+                                                          alignment:
+                                                          Alignment.topRight,
+                                                          child: Material(
+                                                            borderRadius:
+                                                            BorderRadius.circular(
+                                                                10.r),
+                                                            color: Colors.white,
+                                                            child: Container(
+                                                              width: 185.w,
+                                                              padding: EdgeInsets.all(
+                                                                  16.w),
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                MainAxisSize.min,
+                                                                crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                                children: [
+                                                                  Row(
+                                                                    children: [
+                                                                      IconButton(
+                                                                        onPressed:
+                                                                            () {},
+                                                                        icon: Icon(
+                                                                            Icons
+                                                                                .report,
+                                                                            size: 30
+                                                                                .sp),
+                                                                      ),
+                                                                      Text("Report",
+                                                                          style: TextStyle(
+                                                                              fontSize: 25
+                                                                                  .sp,
+                                                                              color: Colors
+                                                                                  .black)),
+                                                                    ],
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      IconButton(
+                                                                        onPressed:
+                                                                            () {},
+                                                                        icon: Icon(
+                                                                            Icons
+                                                                                .block,
+                                                                            size: 30
+                                                                                .sp),
+                                                                      ),
+                                                                      Text("Block",
+                                                                          style: TextStyle(
+                                                                              fontSize: 25
+                                                                                  .sp,
+                                                                              color: Colors
+                                                                                  .black)),
+                                                                    ],
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                                icon: Icon(Icons.flag_outlined,
+                                                    size: 28.sp),
+                                              )
+                                                  : Container(), // Empty container when the user is the post owner
+                                            ],
+                                          ),
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => otherUserDetails(userId: post.userId)),
+                                            );
+                                          },
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    SizedBox(height: 10.h,),
+                                                    SizedBox(
+                                                      width: 300.w,
+                                                      child:Text(post.content,),
+                                                    ),
+                                                    Row(
+                                                      children: <Widget>[
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            if (post.id != null) {
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                  builder: (context) =>
+                                                                      CommentScreen(
+                                                                          postId: post.id!),
+                                                                ),
+                                                              );
+                                                            }
+                                                          },
+                                                          icon: SvgPicture.asset(
+                                                              'res/images/commentbutton.svg'),
+                                                        ),
+                                                        StreamBuilder<QuerySnapshot>(
+                                                          stream: FirebaseFirestore.instance
+                                                              .collection('posts')
+                                                              .doc(post.id)
+                                                              .collection('comments')
+                                                              .snapshots(),
+                                                          builder:
+                                                              (context, commentSnapshot) {
+                                                            if (commentSnapshot
+                                                                .connectionState ==
+                                                                ConnectionState.waiting) {
+                                                              return const Text("0");
+                                                            } else if (commentSnapshot
+                                                                .hasData) {
+                                                              return Text(
+                                                                commentSnapshot
+                                                                    .data!.docs.length
+                                                                    .toString(),
+                                                                style: const TextStyle(
+                                                                    fontWeight:
+                                                                    FontWeight.w700),
+                                                              );
+                                                            } else {
+                                                              return const Text("0");
+                                                            }
+                                                          },
+                                                        ),
+                                                        SizedBox(width: 20.w),
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            shareText();
+                                                          },
+                                                          icon: SvgPicture.asset(
+                                                              'res/images/Vector.svg'),
+                                                        ),
+                                                        Text("$shareCount",
+                                                            style: const TextStyle(
+                                                                fontWeight:
+                                                                FontWeight.w700)),
+                                                        SizedBox(width: 20.w),
+
+                                                        if (currentUser != null &&
+                                                            currentUser.uid !=
+                                                                post.userId) IconButton(
+                                                          onPressed: () async {
+                                                            String generateChatRoomId(
+                                                                String userId1,
+                                                                String userId2) {
+                                                              return userId1
+                                                                  .hashCode <=
+                                                                  userId2.hashCode
+                                                                  ? '$userId1-$userId2'
+                                                                  : '$userId2-$userId1';
+                                                            }
+
+                                                            final chatRoomId =
+                                                            generateChatRoomId(
+                                                                currentUser.uid,
+                                                                post.userId);
+
+                                                            await FirebaseFirestore
+                                                                .instance
+                                                                .collection(
+                                                                'chatRooms')
+                                                                .doc(chatRoomId)
+                                                                .set({
+                                                              'chatRoomId':
+                                                              chatRoomId,
+                                                              'users': [
+                                                                currentUser.uid,
+                                                                post.userId
+                                                              ],
+                                                              'postContent':
+                                                              post.content,
+                                                              'lastMessage': '',
+                                                              'updatedAt':
+                                                              Timestamp.now(),
+                                                            });
+
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (context) =>
+                                                                    ChatScreen(
+                                                                        chatRoomId:
+                                                                        chatRoomId),
+                                                              ),
+                                                            );
+                                                          },
+                                                          icon: SizedBox(
+                                                            height: 30.h,
+                                                            width: 30.w,
+                                                            child: SvgPicture.asset(
+                                                                'res/images/forwaedbutton.svg'),
+                                                          ),
+                                                        ) else Container(),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Column(
+                                                  children: [
+                                                    // Upvote Button (Only to cast a vote)
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        final currentUser = FirebaseAuth.instance.currentUser;
+                                                        if (currentUser == null) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('Please log in to vote.')),
+                                                          );
+                                                          return;
+                                                        }
+
+                                                        final userId = currentUser.uid;
+                                                        final hasVoted = await hasUserVoted(post.id!, userId);
+
+                                                        if (!hasVoted) {
+                                                          // If the user has not voted, cast an upvote
+                                                          await votePost(post.id!, userId, true);
+                                                        } else {
+                                                          // If the user has already voted, do nothing
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('You have already voted.')),
+                                                          );
+                                                        }
+                                                      },
+                                                      icon: SvgPicture.asset('res/images/iconamoon_arrow-up-2-thin.svg'),
+                                                    ),
+
+                                                    // Vote Count
+                                                    StreamBuilder<int>(
+                                                      stream: getVoteCount(post.id!),
+                                                      builder: (context, snapshot) {
+                                                        if (!snapshot.hasData) {
+                                                          return const Text("0");
+                                                        }
+                                                        return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24.sp, color: const Color(0xFF27D4C1),),);
+                                                      },
+                                                    ),
+
+                                                    // Down vote Button (Only to retract a vote)
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        final userId = FirebaseAuth.instance.currentUser!.uid;
+                                                        final hasVoted = await hasUserVoted(post.id!, userId);
+
+                                                        if (hasVoted) {
+                                                          // If the user has voted, retract their vote (remove the vote)
+                                                          await votePost(post.id!, userId, false);
+                                                        } else {
+                                                          // If the user has not voted yet, do nothing
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('You haven\'t voted yet.')),
+                                                          );
+                                                        }
+                                                      },
+                                                      icon: SvgPicture.asset('res/images/iconamoon_arrow-down-2-thin.svg'),
+                                                    ),
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Second TabBar View
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('posts')
-                          .orderBy('createdAt', descending: true)
-                          .snapshots(),
+                      stream: _getCurrentDayPostsStream(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.docs.isEmpty) {
-                          return const Center(child: Text('No posts available.'));
+                        } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(child: Text('No posts for today.'));
                         } else {
-                          final posts = snapshot.data!.docs
-                              .map((doc) => Post.fromMap(
-                              doc.data() as Map<String, dynamic>, doc.id))
-                              .toList();
-                          return ListView.builder(
-                            itemCount: posts.length,
-                            itemBuilder: (context, index) {
-                              final post = posts[index];
-                              final currentUser = FirebaseAuth.instance.currentUser;
-                              return Card(
-                                color: Colors.white,
-                                child: ListTile(
-                                  title: Row(
+                          final posts = snapshot.data!.docs.map((doc) {
+                            final post = Post.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+                            final currentUser = FirebaseAuth.instance.currentUser;
+                            return Card(
+                              color: Colors.white,
+                              child: ListTile(
+                                title: GestureDetector(
+                                  child: Row(
                                     children: [
                                       post.userProfileUrl != null
                                           ? CircleAvatar(
@@ -392,28 +794,23 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
                                           : const CircleAvatar(
                                           child: Icon(Icons.person)),
                                       SizedBox(width: 20.w),
-                                      GestureDetector(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              post.userName,
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 22.sp),
-                                            ),
-                                            Text(
-                                              post.getFormattedTime(), // Display "Today 12:20 PM" or "22 Nov 2024 12:20 PM"
-                                              style: TextStyle(
-                                                  fontSize: 12.sp,
-                                                  color: Colors.grey),
-                                            ),
-                                          ],
-                                        ),
-                                        onTap: (){
-                                          Navigator.push(context, MaterialPageRoute(builder: (context)=> otherUserDetails(userId: post.userId)));
-                                        },
+                                      Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            post.userName,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 22.sp),
+                                          ),
+                                          Text(
+                                            post.getFormattedTime(), // Display "Today 12:20 PM" or "22 Nov 2024 12:20 PM"
+                                            style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: Colors.grey),
+                                          ),
+                                        ],
                                       ),
                                       const Spacer(),
                                       // Only show IconButton if the current user is not the author of the post
@@ -499,409 +896,578 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
                                           : Container(), // Empty container when the user is the post owner
                                     ],
                                   ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SizedBox(height: 10.h,),
-                                              SizedBox(
-                                                width: 300.w,
-                                                child:Text(post.content,),
-                                              ),
-                                              Row(
-                                                children: <Widget>[
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      if (post.id != null) {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                CommentScreen(
-                                                                    postId: post.id!),
-                                                          ),
-                                                        );
-                                                      }
-                                                    },
-                                                    icon: SvgPicture.asset(
-                                                        'res/images/commentbutton.svg'),
-                                                  ),
-                                                  StreamBuilder<QuerySnapshot>(
-                                                    stream: FirebaseFirestore.instance
-                                                        .collection('posts')
-                                                        .doc(post.id)
-                                                        .collection('comments')
-                                                        .snapshots(),
-                                                    builder:
-                                                        (context, commentSnapshot) {
-                                                      if (commentSnapshot
-                                                          .connectionState ==
-                                                          ConnectionState.waiting) {
-                                                        return Text("0");
-                                                      } else if (commentSnapshot
-                                                          .hasData) {
-                                                        return Text(
-                                                          commentSnapshot
-                                                              .data!.docs.length
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                              FontWeight.w700),
-                                                        );
-                                                      } else {
-                                                        return Text("0");
-                                                      }
-                                                    },
-                                                  ),
-                                                  SizedBox(width: 20.w),
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      shareText();
-                                                    },
-                                                    icon: SvgPicture.asset(
-                                                        'res/images/Vector.svg'),
-                                                  ),
-                                                  Text("$shareCount",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                          FontWeight.w700)),
-                                                  SizedBox(width: 20.w),
-
-                                                  currentUser != null &&
-                                                      currentUser.uid !=
-                                                          post.userId
-                                                      ? IconButton(
-                                                    onPressed: () async {
-                                                      if (currentUser == null) {
-                                                        ScaffoldMessenger.of(
-                                                            context)
-                                                            .showSnackBar(
-                                                          const SnackBar(
-                                                              content: Text(
-                                                                  'Please log in to chat.')),
-                                                        );
-                                                        return;
-                                                      }
-
-                                                      String generateChatRoomId(
-                                                          String userId1,
-                                                          String userId2) {
-                                                        return userId1
-                                                            .hashCode <=
-                                                            userId2.hashCode
-                                                            ? '$userId1-$userId2'
-                                                            : '$userId2-$userId1';
-                                                      }
-
-                                                      final chatRoomId =
-                                                      generateChatRoomId(
-                                                          currentUser.uid,
-                                                          post.userId);
-
-                                                      await FirebaseFirestore
-                                                          .instance
-                                                          .collection(
-                                                          'chatRooms')
-                                                          .doc(chatRoomId)
-                                                          .set({
-                                                        'chatRoomId':
-                                                        chatRoomId,
-                                                        'users': [
-                                                          currentUser.uid,
-                                                          post.userId
-                                                        ],
-                                                        'postContent':
-                                                        post.content,
-                                                        'lastMessage': '',
-                                                        'updatedAt':
-                                                        Timestamp.now(),
-                                                      });
-
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => otherUserDetails(userId: post.userId)),
+                                    );
+                                  },
+                                ),
+                                subtitle:  Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(height: 10.h,),
+                                            SizedBox(
+                                              width: 300.w,
+                                              child:Text(post.content,),
+                                            ),
+                                            Row(
+                                              children: <Widget>[
+                                                IconButton(
+                                                  onPressed: () {
+                                                    if (post.id != null) {
                                                       Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
                                                           builder: (context) =>
-                                                              ChatScreen(
-                                                                  chatRoomId:
-                                                                  chatRoomId),
+                                                              CommentScreen(
+                                                                  postId: post.id!),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  icon: SvgPicture.asset(
+                                                      'res/images/commentbutton.svg'),
+                                                ),
+                                                StreamBuilder<QuerySnapshot>(
+                                                  stream: FirebaseFirestore.instance
+                                                      .collection('posts')
+                                                      .doc(post.id)
+                                                      .collection('comments')
+                                                      .snapshots(),
+                                                  builder:
+                                                      (context, commentSnapshot) {
+                                                    if (commentSnapshot
+                                                        .connectionState ==
+                                                        ConnectionState.waiting) {
+                                                      return const Text("0");
+                                                    } else if (commentSnapshot
+                                                        .hasData) {
+                                                      return Text(
+                                                        commentSnapshot
+                                                            .data!.docs.length
+                                                            .toString(),
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                            FontWeight.w700),
+                                                      );
+                                                    } else {
+                                                      return const Text("0");
+                                                    }
+                                                  },
+                                                ),
+                                                SizedBox(width: 20.w),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    shareText();
+                                                  },
+                                                  icon: SvgPicture.asset(
+                                                      'res/images/Vector.svg'),
+                                                ),
+                                                Text("$shareCount",
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                        FontWeight.w700)),
+                                                SizedBox(width: 20.w),
+
+                                                if (currentUser != null &&
+                                                    currentUser.uid !=
+                                                        post.userId) IconButton(
+                                                  onPressed: () async {
+                                                    String generateChatRoomId(
+                                                        String userId1,
+                                                        String userId2) {
+                                                      return userId1
+                                                          .hashCode <=
+                                                          userId2.hashCode
+                                                          ? '$userId1-$userId2'
+                                                          : '$userId2-$userId1';
+                                                    }
+
+                                                    final chatRoomId =
+                                                    generateChatRoomId(
+                                                        currentUser.uid,
+                                                        post.userId);
+
+                                                    await FirebaseFirestore
+                                                        .instance
+                                                        .collection(
+                                                        'chatRooms')
+                                                        .doc(chatRoomId)
+                                                        .set({
+                                                      'chatRoomId':
+                                                      chatRoomId,
+                                                      'users': [
+                                                        currentUser.uid,
+                                                        post.userId
+                                                      ],
+                                                      'postContent':
+                                                      post.content,
+                                                      'lastMessage': '',
+                                                      'updatedAt':
+                                                      Timestamp.now(),
+                                                    });
+
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ChatScreen(
+                                                                chatRoomId:
+                                                                chatRoomId),
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon: SizedBox(
+                                                    height: 30.h,
+                                                    width: 30.w,
+                                                    child: SvgPicture.asset(
+                                                        'res/images/forwaedbutton.svg'),
+                                                  ),
+                                                ) else Container(),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          children: [
+                                            // Upvote Button (Only to cast a vote)
+                                            IconButton(
+                                              onPressed: () async {
+                                                final currentUser = FirebaseAuth.instance.currentUser;
+                                                if (currentUser == null) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('Please log in to vote.')),
+                                                  );
+                                                  return;
+                                                }
+
+                                                final userId = currentUser.uid;
+                                                final hasVoted = await hasUserVoted(post.id!, userId);
+
+                                                if (!hasVoted) {
+                                                  // If the user has not voted, cast an upvote
+                                                  await votePost(post.id!, userId, true);
+                                                } else {
+                                                  // If the user has already voted, do nothing
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('You have already voted.')),
+                                                  );
+                                                }
+                                              },
+                                              icon: SvgPicture.asset('res/images/iconamoon_arrow-up-2-thin.svg'),
+                                            ),
+
+                                            // Vote Count
+                                            StreamBuilder<int>(
+                                              stream: getVoteCount(post.id!),
+                                              builder: (context, snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return const Text("0");
+                                                }
+                                                return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24.sp, color: const Color(0xFF27D4C1),),);
+                                              },
+                                            ),
+
+                                            // Down vote Button (Only to retract a vote)
+                                            IconButton(
+                                              onPressed: () async {
+                                                final userId = FirebaseAuth.instance.currentUser!.uid;
+                                                final hasVoted = await hasUserVoted(post.id!, userId);
+
+                                                if (hasVoted) {
+                                                  // If the user has voted, retract their vote (remove the vote)
+                                                  await votePost(post.id!, userId, false);
+                                                } else {
+                                                  // If the user has not voted yet, do nothing
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('You haven\'t voted yet.')),
+                                                  );
+                                                }
+                                              },
+                                              icon: SvgPicture.asset('res/images/iconamoon_arrow-down-2-thin.svg'),
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList();
+                          return ListView(children: posts);
+                        }
+                      },
+                    ),
+
+                    // Third TabBar View
+                    FutureBuilder<List<String>>(
+                      future: getFollowingUserIds(FirebaseAuth.instance.currentUser!.uid), // Fetch following userIds
+                      builder: (context, followingSnapshot) {
+                        if (followingSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (followingSnapshot.hasError) {
+                          return Center(child: Text('Error: ${followingSnapshot.error}'));
+                        } else if (!followingSnapshot.hasData || followingSnapshot.data!.isEmpty) {
+                          return const Center(child: Text('You are not following anyone.'));
+                        } else {
+                          final followingUserIds = followingSnapshot.data!;
+
+                          // Now, use followingUserIds in the StreamBuilder to filter posts
+                          return StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('posts')
+                                .where('userId', whereIn: followingUserIds) // Filter posts by followed users
+                                .orderBy('createdAt', descending: true)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              } else if (snapshot.hasError) {
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                return const Center(child: Text('No posts from users you follow.'));
+                              } else {
+                                final posts = snapshot.data!.docs
+                                    .map((doc) => Post.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                                    .toList();
+                                return ListView.builder(
+                                  itemCount: posts.length,
+                                  itemBuilder: (context, index) {
+                                    final post = posts[index];
+                                    final currentUser = FirebaseAuth.instance.currentUser;
+                                    return Card(
+                                      color: Colors.white,
+                                      child: ListTile(
+                                        title: GestureDetector(
+                                          child: Row(
+                                            children: [
+                                              post.userProfileUrl != null
+                                                  ? CircleAvatar(backgroundImage: NetworkImage(post.userProfileUrl!))
+                                                  : const CircleAvatar(child: Icon(Icons.person)),
+                                              SizedBox(width: 20.w),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    post.userName,
+                                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22.sp),
+                                                  ),
+                                                  Text(
+                                                    post.getFormattedTime(), // Display formatted time
+                                                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                              const Spacer(),
+                                              // Only show IconButton if the current user is not the author of the post
+                                              currentUser != null &&
+                                                  currentUser.uid != post.userId
+                                                  ? IconButton(
+                                                onPressed: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (BuildContext context) {
+                                                      return Padding(
+                                                        padding: EdgeInsets.only(right: 20.w,top: 100.h),
+                                                        child: Align(
+                                                          alignment:
+                                                          Alignment.topRight,
+                                                          child: Material(
+                                                            borderRadius:
+                                                            BorderRadius.circular(
+                                                                10.r),
+                                                            color: Colors.white,
+                                                            child: Container(
+                                                              width: 185.w,
+                                                              padding: EdgeInsets.all(
+                                                                  16.w),
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                MainAxisSize.min,
+                                                                crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                                children: [
+                                                                  Row(
+                                                                    children: [
+                                                                      IconButton(
+                                                                        onPressed:
+                                                                            () {},
+                                                                        icon: Icon(
+                                                                            Icons
+                                                                                .report,
+                                                                            size: 30
+                                                                                .sp),
+                                                                      ),
+                                                                      Text("Report",
+                                                                          style: TextStyle(
+                                                                              fontSize: 25
+                                                                                  .sp,
+                                                                              color: Colors
+                                                                                  .black)),
+                                                                    ],
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      IconButton(
+                                                                        onPressed:
+                                                                            () {},
+                                                                        icon: Icon(
+                                                                            Icons
+                                                                                .block,
+                                                                            size: 30
+                                                                                .sp),
+                                                                      ),
+                                                                      Text("Block",
+                                                                          style: TextStyle(
+                                                                              fontSize: 25
+                                                                                  .sp,
+                                                                              color: Colors
+                                                                                  .black)),
+                                                                    ],
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ),
                                                       );
                                                     },
-                                                    icon: SizedBox(
-                                                      height: 30.h,
-                                                      width: 30.w,
-                                                      child: SvgPicture.asset(
-                                                          'res/images/forwaedbutton.svg'),
-                                                    ),
-                                                  )
-                                                      : Container(),
-                                                ],
-                                              ),
+                                                  );
+                                                },
+                                                icon: Icon(Icons.flag_outlined,
+                                                    size: 28.sp),
+                                              )
+                                                  : Container(), // Empty container when the user is the post owner
                                             ],
                                           ),
-                                          Column(
-                                            children: [
-                                              // Upvote Button (Only to cast a vote)
-                                              IconButton(
-                                                onPressed: () async {
-                                                  final currentUser = FirebaseAuth.instance.currentUser;
-                                                  if (currentUser == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('Please log in to vote.')),
-                                                    );
-                                                    return;
-                                                  }
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => otherUserDetails(userId: post.userId)),
+                                            );
+                                          },
+                                        ),
+                                        subtitle:  Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    SizedBox(height: 10.h,),
+                                                    SizedBox(
+                                                      width: 300.w,
+                                                      child:Text(post.content,),
+                                                    ),
+                                                    Row(
+                                                      children: <Widget>[
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            if (post.id != null) {
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                  builder: (context) =>
+                                                                      CommentScreen(
+                                                                          postId: post.id!),
+                                                                ),
+                                                              );
+                                                            }
+                                                          },
+                                                          icon: SvgPicture.asset(
+                                                              'res/images/commentbutton.svg'),
+                                                        ),
+                                                        StreamBuilder<QuerySnapshot>(
+                                                          stream: FirebaseFirestore.instance
+                                                              .collection('posts')
+                                                              .doc(post.id)
+                                                              .collection('comments')
+                                                              .snapshots(),
+                                                          builder:
+                                                              (context, commentSnapshot) {
+                                                            if (commentSnapshot
+                                                                .connectionState ==
+                                                                ConnectionState.waiting) {
+                                                              return const Text("0");
+                                                            } else if (commentSnapshot
+                                                                .hasData) {
+                                                              return Text(
+                                                                commentSnapshot
+                                                                    .data!.docs.length
+                                                                    .toString(),
+                                                                style: const TextStyle(
+                                                                    fontWeight:
+                                                                    FontWeight.w700),
+                                                              );
+                                                            } else {
+                                                              return const Text("0");
+                                                            }
+                                                          },
+                                                        ),
+                                                        SizedBox(width: 20.w),
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            shareText();
+                                                          },
+                                                          icon: SvgPicture.asset(
+                                                              'res/images/Vector.svg'),
+                                                        ),
+                                                        Text("$shareCount",
+                                                            style: const TextStyle(
+                                                                fontWeight:
+                                                                FontWeight.w700)),
+                                                        SizedBox(width: 20.w),
 
-                                                  final userId = currentUser.uid;
-                                                  final hasVoted = await hasUserVoted(post.id!, userId);
+                                                        if (currentUser != null &&
+                                                            currentUser.uid !=
+                                                                post.userId) IconButton(
+                                                          onPressed: () async {
+                                                            String generateChatRoomId(
+                                                                String userId1,
+                                                                String userId2) {
+                                                              return userId1
+                                                                  .hashCode <=
+                                                                  userId2.hashCode
+                                                                  ? '$userId1-$userId2'
+                                                                  : '$userId2-$userId1';
+                                                            }
 
-                                                  if (!hasVoted) {
-                                                    // If the user has not voted, cast an upvote
-                                                    await votePost(post.id!, userId, true);
-                                                  } else {
-                                                    // If the user has already voted, do nothing
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('You have already voted.')),
-                                                    );
-                                                  }
-                                                },
-                                                icon: SvgPicture.asset('res/images/iconamoon_arrow-up-2-thin.svg'),
-                                              ),
+                                                            final chatRoomId =
+                                                            generateChatRoomId(
+                                                                currentUser.uid,
+                                                                post.userId);
 
-                                              // Vote Count
-                                              StreamBuilder<int>(
-                                                stream: getVoteCount(post.id!),
-                                                builder: (context, snapshot) {
-                                                  if (!snapshot.hasData) {
-                                                    return const Text("0");
-                                                  }
-                                                  return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24.sp, color: Color(0xFF27D4C1),),);
-                                                },
-                                              ),
+                                                            await FirebaseFirestore
+                                                                .instance
+                                                                .collection(
+                                                                'chatRooms')
+                                                                .doc(chatRoomId)
+                                                                .set({
+                                                              'chatRoomId':
+                                                              chatRoomId,
+                                                              'users': [
+                                                                currentUser.uid,
+                                                                post.userId
+                                                              ],
+                                                              'postContent':
+                                                              post.content,
+                                                              'lastMessage': '',
+                                                              'updatedAt':
+                                                              Timestamp.now(),
+                                                            });
 
-                                              // Downvote Button (Only to retract a vote)
-                                              IconButton(
-                                                onPressed: () async {
-                                                  final userId = FirebaseAuth.instance.currentUser!.uid;
-                                                  final hasVoted = await hasUserVoted(post.id!, userId);
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (context) =>
+                                                                    ChatScreen(
+                                                                        chatRoomId:
+                                                                        chatRoomId),
+                                                              ),
+                                                            );
+                                                          },
+                                                          icon: SizedBox(
+                                                            height: 30.h,
+                                                            width: 30.w,
+                                                            child: SvgPicture.asset(
+                                                                'res/images/forwaedbutton.svg'),
+                                                          ),
+                                                        ) else Container(),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Column(
+                                                  children: [
+                                                    // Upvote Button (Only to cast a vote)
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        final currentUser = FirebaseAuth.instance.currentUser;
+                                                        if (currentUser == null) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('Please log in to vote.')),
+                                                          );
+                                                          return;
+                                                        }
 
-                                                  if (hasVoted) {
-                                                    // If the user has voted, retract their vote (remove the vote)
-                                                    await votePost(post.id!, userId, false);
-                                                  } else {
-                                                    // If the user has not voted yet, do nothing
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('You haven\'t voted yet.')),
-                                                    );
-                                                  }
-                                                },
-                                                icon: SvgPicture.asset('res/images/iconamoon_arrow-down-2-thin.svg'),
-                                              ),
-                                            ],
-                                          )
+                                                        final userId = currentUser.uid;
+                                                        final hasVoted = await hasUserVoted(post.id!, userId);
 
-                                        ],
+                                                        if (!hasVoted) {
+                                                          // If the user has not voted, cast an upvote
+                                                          await votePost(post.id!, userId, true);
+                                                        } else {
+                                                          // If the user has already voted, do nothing
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('You have already voted.')),
+                                                          );
+                                                        }
+                                                      },
+                                                      icon: SvgPicture.asset('res/images/iconamoon_arrow-up-2-thin.svg'),
+                                                    ),
+
+                                                    // Vote Count
+                                                    StreamBuilder<int>(
+                                                      stream: getVoteCount(post.id!),
+                                                      builder: (context, snapshot) {
+                                                        if (!snapshot.hasData) {
+                                                          return const Text("0");
+                                                        }
+                                                        return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24.sp, color: const Color(0xFF27D4C1),),);
+                                                      },
+                                                    ),
+
+                                                    // Down vote Button (Only to retract a vote)
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        final userId = FirebaseAuth.instance.currentUser!.uid;
+                                                        final hasVoted = await hasUserVoted(post.id!, userId);
+
+                                                        if (hasVoted) {
+                                                          // If the user has voted, retract their vote (remove the vote)
+                                                          await votePost(post.id!, userId, false);
+                                                        } else {
+                                                          // If the user has not voted yet, do nothing
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            const SnackBar(content: Text('You haven\'t voted yet.')),
+                                                          );
+                                                        }
+                                                      },
+                                                      icon: SvgPicture.asset('res/images/iconamoon_arrow-down-2-thin.svg'),
+                                                    ),
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                                    );
+                                  },
+                                );
+                              }
                             },
                           );
                         }
                       },
                     ),
-                    // Second TabBar View
-                    const Center(child: Text('No New Post')),
-                    // Third TabBar View
-                   // const Center(child: Text('No Follower')),
-
-                    // FutureBuilder<List<String>>(
-                    //   future: getFollowingUserIds(FirebaseAuth.instance.currentUser!.uid), // Fetch following userIds
-                    //   builder: (context, followingSnapshot) {
-                    //     if (followingSnapshot.connectionState == ConnectionState.waiting) {
-                    //       return const Center(child: CircularProgressIndicator());
-                    //     } else if (followingSnapshot.hasError) {
-                    //       return Center(child: Text('Error: ${followingSnapshot.error}'));
-                    //     } else if (!followingSnapshot.hasData || followingSnapshot.data!.isEmpty) {
-                    //       return const Center(child: Text('You are not following anyone.'));
-                    //     } else {
-                    //       final followingUserIds = followingSnapshot.data!;
-                    //
-                    //       // Now, use followingUserIds in the StreamBuilder to filter posts
-                    //       return StreamBuilder<QuerySnapshot>(
-                    //         stream: FirebaseFirestore.instance
-                    //             .collection('posts')
-                    //             .where('userId', whereIn: followingUserIds) // Filter posts by followed users
-                    //             .orderBy('createdAt', descending: true)
-                    //             .snapshots(),
-                    //         builder: (context, snapshot) {
-                    //           if (snapshot.connectionState == ConnectionState.waiting) {
-                    //             return const Center(child: CircularProgressIndicator());
-                    //           } else if (snapshot.hasError) {
-                    //             return Center(child: Text('Error: ${snapshot.error}'));
-                    //           } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    //             return const Center(child: Text('No posts from users you follow.'));
-                    //           } else {
-                    //             final posts = snapshot.data!.docs
-                    //                 .map((doc) => Post.fromMap(doc.data() as Map<String, dynamic>, doc.id))
-                    //                 .toList();
-                    //             return ListView.builder(
-                    //               itemCount: posts.length,
-                    //               itemBuilder: (context, index) {
-                    //                 final post = posts[index];
-                    //                 final currentUser = FirebaseAuth.instance.currentUser;
-                    //                 return Card(
-                    //                   color: Colors.white,
-                    //                   child: ListTile(
-                    //                     title: Row(
-                    //                       children: [
-                    //                         post.userProfileUrl != null
-                    //                             ? CircleAvatar(backgroundImage: NetworkImage(post.userProfileUrl!))
-                    //                             : const CircleAvatar(child: Icon(Icons.person)),
-                    //                         SizedBox(width: 20.w),
-                    //                         GestureDetector(
-                    //                           child: Column(
-                    //                             crossAxisAlignment: CrossAxisAlignment.start,
-                    //                             children: [
-                    //                               Text(
-                    //                                 post.userName,
-                    //                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22.sp),
-                    //                               ),
-                    //                               Text(
-                    //                                 post.getFormattedTime(), // Display formatted time
-                    //                                 style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-                    //                               ),
-                    //                             ],
-                    //                           ),
-                    //                           onTap: () {
-                    //                             Navigator.push(
-                    //                               context,
-                    //                               MaterialPageRoute(builder: (context) => otherUserDetails(userId: post.userId)),
-                    //                             );
-                    //                           },
-                    //                         ),
-                    //                         const Spacer(),
-                    //                         currentUser != null && currentUser.uid != post.userId
-                    //                             ? IconButton(
-                    //                           onPressed: () {
-                    //                             // Handle flagging or reporting the post here
-                    //                           },
-                    //                           icon: Icon(Icons.flag_outlined, size: 28.sp),
-                    //                         )
-                    //                             : Container(),
-                    //                       ],
-                    //                     ),
-                    //                     subtitle: Column(
-                    //                       crossAxisAlignment: CrossAxisAlignment.start,
-                    //                       children: [
-                    //                         Row(
-                    //                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //                           children: [
-                    //                             SizedBox(height: 10.h),
-                    //                             SizedBox(width: 300.w, child: Text(post.content)),
-                    //                             Row(
-                    //                               children: <Widget>[
-                    //                                 IconButton(
-                    //                                   onPressed: () {
-                    //                                     if (post.id != null) {
-                    //                                       Navigator.push(
-                    //                                         context,
-                    //                                         MaterialPageRoute(
-                    //                                           builder: (context) => CommentScreen(postId: post.id!),
-                    //                                         ),
-                    //                                       );
-                    //                                     }
-                    //                                   },
-                    //                                   icon: SvgPicture.asset('res/images/commentbutton.svg'),
-                    //                                 ),
-                    //                                 StreamBuilder<QuerySnapshot>(
-                    //                                   stream: FirebaseFirestore.instance
-                    //                                       .collection('posts')
-                    //                                       .doc(post.id)
-                    //                                       .collection('comments')
-                    //                                       .snapshots(),
-                    //                                   builder: (context, commentSnapshot) {
-                    //                                     if (commentSnapshot.connectionState == ConnectionState.waiting) {
-                    //                                       return Text("0");
-                    //                                     } else if (commentSnapshot.hasData) {
-                    //                                       return Text(commentSnapshot.data!.docs.length.toString(),
-                    //                                           style: TextStyle(fontWeight: FontWeight.w700));
-                    //                                     } else {
-                    //                                       return Text("0");
-                    //                                     }
-                    //                                   },
-                    //                                 ),
-                    //                                 SizedBox(width: 20.w),
-                    //                                 IconButton(
-                    //                                   onPressed: () {
-                    //                                     shareText(); // Implement share functionality
-                    //                                   },
-                    //                                   icon: SvgPicture.asset('res/images/Vector.svg'),
-                    //                                 ),
-                    //                                 Text("$shareCount", style: TextStyle(fontWeight: FontWeight.w700)),
-                    //                                 SizedBox(width: 20.w),
-                    //                                 currentUser != null && currentUser.uid != post.userId
-                    //                                     ? IconButton(
-                    //                                   onPressed: () async {
-                    //                                     if (currentUser == null) {
-                    //                                       ScaffoldMessenger.of(context).showSnackBar(
-                    //                                         const SnackBar(content: Text('Please log in to chat.')),
-                    //                                       );
-                    //                                       return;
-                    //                                     }
-                    //
-                    //                                     String generateChatRoomId(String userId1, String userId2) {
-                    //                                       return userId1.hashCode <= userId2.hashCode
-                    //                                           ? '$userId1-$userId2'
-                    //                                           : '$userId2-$userId1';
-                    //                                     }
-                    //
-                    //                                     final chatRoomId = generateChatRoomId(currentUser.uid, post.userId);
-                    //                                     await FirebaseFirestore.instance.collection('chatRooms').doc(chatRoomId).set({
-                    //                                       'chatRoomId': chatRoomId,
-                    //                                       'users': [currentUser.uid, post.userId],
-                    //                                       'postContent': post.content,
-                    //                                       'lastMessage': '',
-                    //                                       'updatedAt': Timestamp.now(),
-                    //                                     });
-                    //
-                    //                                     Navigator.push(
-                    //                                       context,
-                    //                                       MaterialPageRoute(
-                    //                                         builder: (context) => ChatScreen(chatRoomId: chatRoomId),
-                    //                                       ),
-                    //                                     );
-                    //                                   },
-                    //                                   icon: SizedBox(height: 30.h, width: 30.w, child: SvgPicture.asset('res/images/forwaedbutton.svg')),
-                    //                                 )
-                    //                                     : Container(),
-                    //                               ],
-                    //                             ),
-                    //                           ],
-                    //                         ),
-                    //                       ],
-                    //                     ),
-                    //                   ),
-                    //                 );
-                    //               },
-                    //             );
-                    //           }
-                    //         },
-                    //       );
-                    //     }
-                    //   },
-                    // ),
-
 
                     // Fourth TabBar View
-                    const Center(child: Text('No Verified')),
+                   const Center(child:Text('No Verified available'))
                   ]),
             )
           ],
@@ -911,13 +1477,14 @@ class _FirstScreenState extends State<FirstScreen> with TickerProviderStateMixin
   }
 }
 
+
 class Post {
   String? id;
   final String content;
   final String userId;
   final String userName;
   final String? userProfileUrl;
-  final DateTime createdAt;
+  final DateTime createdAt; // Change to DateTime directly
   final Map<String, bool>? votes; // Added votes field
 
   Post({
@@ -936,22 +1503,26 @@ class Post {
       'userId': userId,
       'userName': userName,
       'userProfileUrl': userProfileUrl,
-      'createdAt': createdAt.toIso8601String(),
-      'votes': votes, // Include votes in Firestore
+      'createdAt': createdAt.toIso8601String(), // Store as ISO string
+      'votes': votes,
     };
   }
 
   static Post fromMap(Map<String, dynamic> map, String id) {
     return Post(
       id: id,
-      content: map['content'],
-      userId: map['userId'],
-      userName: map['userName'],
+      content: map['content'] ?? '',
+      userId: map['userId'] ?? '',
+      userName: map['userName'] ?? 'Unknown',
       userProfileUrl: map['userProfileUrl'],
-      createdAt: DateTime.parse(map['createdAt']),
+      createdAt: map['createdAt'] != null
+          ? (map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp).toDate()
+          : DateTime.parse(map['createdAt']))
+          : DateTime.now(), // Handle both Timestamp and String
       votes: map['votes'] != null
           ? Map<String, bool>.from(map['votes'])
-          : null, // Parse votes from Firestore
+          : {}, // Default to an empty map
     );
   }
 
