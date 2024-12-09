@@ -1,13 +1,28 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
-class otherUserDetails extends StatelessWidget {
-  final String userId; // User ID passed to the screen
+class OtherUserDetails extends StatelessWidget {
+  const OtherUserDetails({super.key, required this.userId});
 
-  const otherUserDetails({super.key, required this.userId});
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,  // Toast duration (SHORT or LONG)
+      gravity: ToastGravity.TOP,  // Toast position (TOP, CENTER, or BOTTOM)
+      timeInSecForIosWeb: 1,  // Duration for iOS/Web
+      backgroundColor: const Color(0xFF27D4C1),  // Background color
+      textColor: Colors.white,  // Text color
+      fontSize: 16.0,  // Font size
+    );
+  }
+
+
+  final String userId; // User ID passed to the screen
 
   // Fetch user details from Firestore
   Future<Map<String, dynamic>> fetchUserData(String userId) async {
@@ -35,9 +50,9 @@ class otherUserDetails extends StatelessWidget {
         'followers': FieldValue.arrayUnion([currentUserId])
       });
 
-      print("Follow operation successful!");
+      stdout.write("Follow operation successful!");
     } catch (e) {
-      print("Error following user: $e");
+      stdout.write("Error following user: $e");
     }
   }
 
@@ -116,25 +131,22 @@ class otherUserDetails extends StatelessWidget {
                   elevation: 5,
                   height: 40.h,
                   minWidth: 130.w,
-                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.r)
+                  ),
+                  color: const Color(0xFF27D4C1),
                   onPressed: () async {
                     final currentUser = FirebaseAuth.instance.currentUser;
                     if (currentUser == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You must be logged in to follow users')),
-                      );
+                      showToast('You must be logged in to follow users');
                       return;
                     }
 
                     try {
                       await followUser(currentUser.uid, userId);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Followed successfully!'),behavior: SnackBarBehavior.floating,),
-                      );
+                      showToast("Follow operation successful!");
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
+                     showToast('Error :$e');
                     }
                   },
                   child: Text(

@@ -9,12 +9,12 @@ import 'Splash_Screen/splash_screen.dart';
 import 'firebase_options.dart';
 
 void main() async{
-  WidgetsFlutterBinding.ensureInitialized();   
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform,);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandling);
 
   // Enable offline persistence for Firestore
-  FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true);
+  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true);
   runApp(const MyApp());
 }
 
@@ -37,7 +37,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     //Set the fit size (Find your UI design, look at the dimensions of the device screen and fill it in,unit in dp)
     return ScreenUtilInit(
-      designSize: const Size(469, 1036),
+      designSize:  const Size(469, 1036),
       minTextAdapt: true,
       splitScreenMode: true,
       // Use builder only if you need to use library outside ScreenUtilInit context
